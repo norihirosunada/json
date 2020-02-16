@@ -2,35 +2,73 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+  <script
+  src="https://code.jquery.com/jquery-3.4.1.min.js"
+  integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+  crossorigin="anonymous"></script>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 
   <title>iTunes検索</title>
 </head>
 <body>
   <div class="container-fluid">
-    <form class="form-inline" action'/'>
-      <input type="text" name="keyword" class="form-control">
-      <input type="submit" class="form-control">
-    </form>
-    <% if !@musics.empty? %>
-      <div class="row">
-        <% @musics.each do |music| %>
-          <div class="col-lg-3 col-xs-3 col-sm-3 col-md-3">
-            <div class="card">
-              <img src="<%= music["artworkUrl100"] %>" class="card-img-top">
-              <div class="card-body">
-                <p><%= music["artistName"] %></p>
-                <p><%= music["collectionName"] %></p>
-                <p><%= music["trackName"] %></p>
-                <a href="<%= music["previewUrl"] %>">サンプル</a>
-              </div>
-            </div>
-          </div>
-        <% end %>
+    <form class="search-box" action='/'>
+      <div class="form-inline">
+        <input type="text" name="keyword" class="form-control">
+        <input type="submit" class="form-control"> 
       </div>
-    <% else %>
-      検索結果がありません
-    <% end %>
+    </form>
+    <div class="row result">
+    </div>
   </div>
+  <script>
+    $(document).on("click", ".like_button", function(){
+      var id = $(this).data("id");
+
+      $.ajax({
+        url: "/musics/" + id + "/like",
+        method: "POST",
+        success: function(n) {
+          $(".like_label[data-id=" + id + "]").text(n + "いいね");
+        }
+      });
+    });
+    $(".search-box").submit(function() {
+      var keyword = $("input[name=keyword]", this).val();
+      $(".result").empty();
+      $.ajax({
+        url: "/search",
+        method: "GET",
+        data: {
+          keyword: keyword
+        },
+        dataType: "json",
+        success: function (result) {
+          if(result.length){
+            for(i in result){
+              var music = result[i]
+              var container = $("<div>").addClass("col-lg-3 col-xs-3 col-sm-3 col-md-3");
+              var card = $("<div>").addClass("card");
+              card.append($("<img>").attr("src", music["artworkUrl100"]).addClass("card-img-top"));
+              var cardbody = $("<div>").addClass("card-body");
+              cardbody.append($("<p>").text(music["artistName"]));
+              cardbody.append($("<p>").text(music["collectionName"]));
+              cardbody.append($("<p>").text(music["trackName"]));
+              cardbody.append($("<a>").attr("href", music["previewUrl"]).text("サンプル"));
+              cardbody.append($("<br>"));
+              cardbody.append($("<button>").addClass("like_button").text("いいね").data("id", music["id"]));
+              cardbody.append($("<span>").addClass("like_label").text(music["like"]+"いいね").attr("data-id",music["id"]));
+              card.append(cardbody);
+              container.append(card);
+              $(".result").append(container);
+            }
+          }else{
+            $(".result").text("検索結果がありません");
+          }
+        }
+      });
+      return false;
+    });
+  </script>
 </body>
 </html>
